@@ -54,6 +54,10 @@ const SUBJECTS = [
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
+  const [theme, setTheme] = useState<'dark' | 'light'>(() => {
+    const saved = localStorage.getItem('studyTheme');
+    return (saved as 'dark' | 'light') || 'dark';
+  });
   const [tasks, setTasks] = useState<Task[]>(() => {
     const saved = localStorage.getItem('studyTasks');
     return saved ? JSON.parse(saved) : [];
@@ -71,6 +75,11 @@ export default function App() {
     return saved ? JSON.parse(saved) : getDefaultSchedule();
   });
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  useEffect(() => {
+    localStorage.setItem('studyTheme', theme);
+    document.documentElement.classList.toggle('light', theme === 'light');
+  }, [theme]);
 
   useEffect(() => {
     localStorage.setItem('studyTasks', JSON.stringify(tasks));
@@ -98,32 +107,42 @@ export default function App() {
     setSessions((prev) => [...prev, newSession]);
   }, []);
 
+  const toggleTheme = () => {
+    setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'));
+  };
+
   const renderContent = () => {
     switch (activeTab) {
       case 'dashboard':
-        return <Dashboard tasks={tasks} sessions={sessions} schedule={schedule} />;
+        return <Dashboard tasks={tasks} sessions={sessions} schedule={schedule} theme={theme} />;
       case 'schedule':
-        return <Schedule schedule={schedule} setSchedule={setSchedule} subjects={SUBJECTS} />;
+        return <Schedule schedule={schedule} setSchedule={setSchedule} subjects={SUBJECTS} theme={theme} />;
       case 'tasks':
-        return <Tasks tasks={tasks} setTasks={setTasks} subjects={SUBJECTS} />;
+        return <Tasks tasks={tasks} setTasks={setTasks} subjects={SUBJECTS} theme={theme} />;
       case 'timer':
-        return <PomodoroTimer addSession={addSession} subjects={SUBJECTS} />;
+        return <PomodoroTimer addSession={addSession} subjects={SUBJECTS} theme={theme} />;
       case 'notes':
-        return <Notes notes={notes} setNotes={setNotes} subjects={SUBJECTS} />;
+        return <Notes notes={notes} setNotes={setNotes} subjects={SUBJECTS} theme={theme} />;
       case 'progress':
-        return <Progress sessions={sessions} tasks={tasks} subjects={SUBJECTS} />;
+        return <Progress sessions={sessions} tasks={tasks} subjects={SUBJECTS} theme={theme} />;
       default:
-        return <Dashboard tasks={tasks} sessions={sessions} schedule={schedule} />;
+        return <Dashboard tasks={tasks} sessions={sessions} schedule={schedule} theme={theme} />;
     }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex">
+    <div className={`min-h-screen flex transition-colors duration-300 ${
+      theme === 'dark'
+        ? 'bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900'
+        : 'bg-gradient-to-br from-gray-50 via-purple-50 to-blue-50'
+    }`}>
       <Sidebar
         activeTab={activeTab}
         setActiveTab={setActiveTab}
         sidebarOpen={sidebarOpen}
         setSidebarOpen={setSidebarOpen}
+        theme={theme}
+        toggleTheme={toggleTheme}
       />
       <main className="flex-1 p-4 md:p-8 overflow-y-auto max-h-screen">
         <div className="max-w-6xl mx-auto">
@@ -131,12 +150,17 @@ export default function App() {
           <div className="md:hidden flex items-center justify-between mb-6">
             <button
               onClick={() => setSidebarOpen(true)}
-              className="text-white p-2 rounded-lg bg-white/10 hover:bg-white/20"
+              className={`p-2 rounded-lg ${theme === 'dark' ? 'text-white bg-white/10 hover:bg-white/20' : 'text-gray-900 bg-gray-200 hover:bg-gray-300'}`}
             >
               <i className="fas fa-bars text-xl"></i>
             </button>
-            <h1 className="text-xl font-bold text-white">StudyHub</h1>
-            <div className="w-10"></div>
+            <h1 className={`text-xl font-bold ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>StudyHub</h1>
+            <button
+              onClick={toggleTheme}
+              className={`p-2 rounded-lg ${theme === 'dark' ? 'text-white bg-white/10 hover:bg-white/20' : 'text-gray-900 bg-gray-200 hover:bg-gray-300'}`}
+            >
+              <i className={`fas ${theme === 'dark' ? 'fa-sun text-yellow-400' : 'fa-moon text-indigo-600'} text-lg`}></i>
+            </button>
           </div>
           {renderContent()}
         </div>
